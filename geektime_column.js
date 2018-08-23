@@ -101,8 +101,14 @@ const child_process = require('child_process');
         console.log(column_title)
         articles = columns_articles_dict[columns[i]]
 
-        if (!fs.existsSync(column_title)) {
-            fs.mkdirSync(column_title)
+        data_path = 'data'
+        if (!fs.existsSync(data_path)) {
+            fs.mkdirSync(data_path)
+        }
+
+        column_path = path.join(data_path, column_title)
+        if (!fs.existsSync(column_path)) {
+            fs.mkdirSync(column_path)
         }
 
         for (let i = 0; i < articles.length; i++) {
@@ -113,13 +119,13 @@ const child_process = require('child_process');
             title = await page.$eval('#app > div > div > h1', title => title.innerText)
             title = title.replace(/[/\\\?%*:\|"<>\.& ]/g, '-');
             console.log(title)
-            pdf_file_path = path.join(column_title, title + '.pdf')
+            pdf_file_path = path.join(column_path, title + '.pdf')
             await page.pdf({ path: pdf_file_path });
 
             try {
                 const audio_url = await page.$eval('#app > div > div > div.article-content.typo.common-content > div.mini-audio-player > audio', audio => audio.src)
                 // console.log(audio_url)
-                audio_file_path = path.join(column_title, title + '.mp3')
+                audio_file_path = path.join(column_path, title + '.mp3')
                 const cmd = 'C:\\gohls\\gohls.exe -l=true ' + audio_url + ' ' + audio_file_path
                 console.log(cmd)
                 child_process.execSync(cmd)

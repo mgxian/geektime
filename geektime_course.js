@@ -86,12 +86,18 @@ const child_process = require('child_process');
         console.log(column_title)
         articles = columns_articles_dict[columns[i]]
 
-        if (!fs.existsSync(column_title)) {
-            fs.mkdirSync(column_title)
+        data_path = 'data'
+        if (!fs.existsSync(data_path)) {
+            fs.mkdirSync(data_path)
+        }
+
+        column_path = path.join(data_path, column_title)
+        if (!fs.existsSync(column_path)) {
+            fs.mkdirSync(column_path)
         }
 
         video_url = columns_dict[columns[i]].column_video_url
-        video_file_path = path.join(column_title, '00---课程介绍' + '.mp4')
+        video_file_path = path.join(column_path, '00---课程介绍' + '.mp4')
         const cmd = 'C:\\gohls\\gohls.exe -l=true ' + video_url + ' ' + video_file_path
         console.log(cmd)
         child_process.execSync(cmd)
@@ -103,7 +109,7 @@ const child_process = require('child_process');
             console.log(title)
             try {
                 video_url = articles[i].video_media_map.hd.url
-                video_file_path = path.join(column_title, title + '.mp4')
+                video_file_path = path.join(column_path, title + '.mp4')
                 const cmd = 'C:\\gohls\\gohls.exe -l=true ' + video_url + ' ' + video_file_path
                 console.log(cmd)
                 child_process.execSync(cmd)
