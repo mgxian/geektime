@@ -114,7 +114,8 @@ const child_process = require('child_process');
         for (let i = 0; i < articles.length; i++) {
             const url = 'https://time.geekbang.org/column/article/' + articles[i].id
             console.log(url)
-            await page.goto(url)
+            // await page.goto(url);
+            await page.goto(url, { "waitUntil": "networkidle0" });
             await page.waitForSelector('#app > div > div > div.article-content.typo.common-content > p')
             title = await page.$eval('#app > div > div > h1', title => title.innerText)
             title = title.replace(/[/\\\?%*:\|"<>\.& ]/g, '-');
