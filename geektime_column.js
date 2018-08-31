@@ -115,6 +115,7 @@ const child_process = require('child_process');
             const url = 'https://time.geekbang.org/column/article/' + articles[i].id
             console.log(url)
             // await page.goto(url);
+            // await page.goto(url, { "waitUntil": "networkidle2" });
             await page.goto(url, { "waitUntil": "networkidle0" });
             await page.waitForSelector('#app > div > div > div.article-content.typo.common-content > p')
             title = await page.$eval('#app > div > div > h1', title => title.innerText)
