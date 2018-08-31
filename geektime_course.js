@@ -83,7 +83,7 @@ const child_process = require('child_process');
     for (let i = 0; i < columns.length; i++) {
         column_title = columns_dict[columns[i]].column_title
         column_title = column_title.replace(/[/\\\?%*:\|"<>\.& ]/g, '');
-        title = i.toString() + '-' + title
+        title = i.toString() + '-' + column_title
         console.log(column_title)
         articles = columns_articles_dict[columns[i]]
 
