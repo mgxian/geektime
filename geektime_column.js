@@ -115,14 +115,20 @@ const child_process = require('child_process');
             const url = 'https://time.geekbang.org/column/article/' + articles[i].id
             console.log(url)
             // await page.goto(url);
-            // await page.goto(url, { "waitUntil": "networkidle2" });
-            await page.goto(url, { "waitUntil": "networkidle0" });
+            await page.goto(url, { "waitUntil": "networkidle2" });
+            // await page.goto(url, { "waitUntil": "networkidle0" });
             await page.waitForSelector('#app > div > div > div.article-content.typo.common-content > p')
             title = await page.$eval('#app > div > div > h1', title => title.innerText)
             title = title.replace(/[/\\\?%*:\|"<>\.& ]/g, '-');
             title = i.toString() + '-' + title
             console.log(title)
             pdf_file_path = path.join(column_path, title + '.pdf')
+
+            // remove article comments button
+            await page.evaluate(() => {
+                document.getElementsByClassName('article')[0].children[1].remove()
+            });
+
             await page.pdf({ path: pdf_file_path });
 
             try {
