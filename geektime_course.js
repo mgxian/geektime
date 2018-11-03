@@ -1,8 +1,8 @@
-const puppeteer = require('puppeteer');
-const URL = require('url').URL;
-const fs = require('fs');
-const path = require('path');
-const child_process = require('child_process');
+const puppeteer = require('puppeteer')
+const URL = require('url').URL
+const fs = require('fs')
+const path = require('path')
+const child_process = require('child_process')
 
 
 (async () => {
@@ -17,19 +17,29 @@ const child_process = require('child_process');
         // headless: false,
         executablePath: 'C:\\chrome-win32\\chrome.exe'
     }
-    const browser = await puppeteer.launch(options);
-    const page = await browser.newPage();
+    const browser = await puppeteer.launch(options)
+    const page = await browser.newPage()
     page.setViewport({
         height: 1080,
         width: 1920
     })
-    main_page = await page.goto('https://account.geekbang.org/signin?redirect=https%3A%2F%2Ftime.geekbang.org%2Fpaid-content');
-    const warnning_dialog_confirm_button = await page.$('body > div.confirm-box-wrapper > div.confirm-box > div.foot > a')
-    if (warnning_dialog_confirm_button != null) {
-        warnning_dialog_confirm_button.click()
+    main_page = await page.goto(
+        'https://account.geekbang.org/signin?redirect=https%3A%2F%2Ftime.geekbang.org%2Fpaid-content'
+    )
+    const warning_dialog_confirm_button = await page.$(
+        'body > div.confirm-box-wrapper > div.confirm-box > div.foot > a'
+    )
+    if (warning_dialog_confirm_button != null) {
+        warning_dialog_confirm_button.click()
     }
-    await page.type('body > div > div.container > div.card > div.nw-phone-container > div.nw-phone-wrap > input', LOGIN_NAME)
-    await page.type('body > div > div.container > div.card > div.input-wrap > input', PASSWORD)
+    await page.type(
+        'body > div > div.container > div.card > div.nw-phone-container > div.nw-phone-wrap > input',
+        LOGIN_NAME
+    )
+    await page.type(
+        'body > div > div.container > div.card > div.input-wrap > input',
+        PASSWORD
+    )
     const login_button_selector = 'body > div > div.container > div.card > button'
     await page.waitForSelector(login_button_selector)
     await page.click(login_button_selector)
@@ -52,7 +62,7 @@ const child_process = require('child_process');
                             columns.push(column.id)
                         }
                     }
-                });
+                })
             }
 
             if (parsedUrl.pathname === '/serv/v1/column/intro') {
@@ -64,14 +74,18 @@ const child_process = require('child_process');
     })
 
     await page.waitForNavigation()
-    await page.waitForSelector('#app > div > div.content-wrap > div:nth-child(4) > div:nth-child(1)')
+    await page.waitForSelector(
+        '#app > div > div.content-wrap > div:nth-child(4) > div:nth-child(1)'
+    )
 
     // console.log(columns)
     for (let i = 0; i < columns.length; i++) {
         column = columns_dict[columns[i]]
-        const url = 'https://time.geekbang.org/course/intro/' + column.id;
-        await page.goto(url);
-        const resp = await page.waitForResponse('https://time.geekbang.org/serv/v1/column/articles');
+        const url = 'https://time.geekbang.org/course/intro/' + column.id
+        await page.goto(url)
+        const resp = await page.waitForResponse(
+            'https://time.geekbang.org/serv/v1/column/articles'
+        )
         // console.log(resp)
         const post_data = JSON.parse(resp.request().postData())
         const data = await resp.json()
@@ -82,7 +96,7 @@ const child_process = require('child_process');
     // console.log(columns_articles_dict)
     for (let i = 0; i < columns.length; i++) {
         column_title = columns_dict[columns[i]].column_title
-        column_title = column_title.replace(/[/\\\?%*:\|"<>\.& ]/g, '');
+        column_title = column_title.replace(/[/\\\?%*:\|"<>\.& ]/g, '')
         title = i.toString() + '-' + column_title
         console.log(column_title)
         articles = columns_articles_dict[columns[i]]
@@ -99,19 +113,21 @@ const child_process = require('child_process');
 
         video_url = columns_dict[columns[i]].column_video_url
         video_file_path = path.join(column_path, '00---课程介绍' + '.mp4')
-        const cmd = 'C:\\gohls\\gohls.exe -l=true ' + video_url + ' ' + video_file_path
+        const cmd =
+            'C:\\gohls\\gohls.exe -l=true ' + video_url + ' ' + video_file_path
         console.log(cmd)
         child_process.execSync(cmd)
 
         // console.log(articles)
         for (let i = 0; i < articles.length; i++) {
             title = articles[i].article_title
-            title = title.replace(/[/\\\?%*:\|"<>\.& ]/g, '-');
+            title = title.replace(/[/\\\?%*:\|"<>\.& ]/g, '-')
             console.log(title)
             try {
                 video_url = articles[i].video_media_map.hd.url
                 video_file_path = path.join(column_path, title + '.mp4')
-                const cmd = 'C:\\gohls\\gohls.exe -l=true ' + video_url + ' ' + video_file_path
+                const cmd =
+                    'C:\\gohls\\gohls.exe -l=true ' + video_url + ' ' + video_file_path
                 console.log(cmd)
                 child_process.execSync(cmd)
             } catch (error) {
@@ -121,5 +137,5 @@ const child_process = require('child_process');
         // break
     }
 
-    await browser.close();
-})();
+    await browser.close()
+})()

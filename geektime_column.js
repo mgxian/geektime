@@ -1,8 +1,8 @@
-const puppeteer = require('puppeteer');
-const URL = require('url').URL;
-const fs = require('fs');
-const path = require('path');
-const child_process = require('child_process');
+const puppeteer = require('puppeteer')
+const URL = require('url').URL
+const fs = require('fs')
+const path = require('path')
+const child_process = require('child_process')
 
 
 (async () => {
@@ -18,19 +18,29 @@ const child_process = require('child_process');
         // headless: false,
         executablePath: 'C:\\chrome-win32\\chrome.exe'
     }
-    const browser = await puppeteer.launch(options);
-    const page = await browser.newPage();
+    const browser = await puppeteer.launch(options)
+    const page = await browser.newPage()
     page.setViewport({
         height: 1080,
         width: 1920
     })
-    main_page = await page.goto('https://account.geekbang.org/signin?redirect=https%3A%2F%2Ftime.geekbang.org%2Fcolumns');
-    const warnning_dialog_confirm_button = await page.$('body > div.confirm-box-wrapper > div.confirm-box > div.foot > a')
-    if (warnning_dialog_confirm_button != null) {
-        warnning_dialog_confirm_button.click()
+    main_page = await page.goto(
+        'https://account.geekbang.org/signin?redirect=https%3A%2F%2Ftime.geekbang.org%2Fcolumns'
+    )
+    const warning_dialog_confirm_button = await page.$(
+        'body > div.confirm-box-wrapper > div.confirm-box > div.foot > a'
+    )
+    if (warning_dialog_confirm_button != null) {
+        warning_dialog_confirm_button.click()
     }
-    await page.type('body > div > div.container > div.card > div.nw-phone-container > div.nw-phone-wrap > input', LOGIN_NAME)
-    await page.type('body > div > div.container > div.card > div.input-wrap > input', PASSWORD)
+    await page.type(
+        'body > div > div.container > div.card > div.nw-phone-container > div.nw-phone-wrap > input',
+        LOGIN_NAME
+    )
+    await page.type(
+        'body > div > div.container > div.card > div.input-wrap > input',
+        PASSWORD
+    )
     const login_button_selector = 'body > div > div.container > div.card > button'
     await page.waitForSelector(login_button_selector)
     await page.click(login_button_selector)
@@ -56,7 +66,7 @@ const child_process = require('child_process');
                             columns.push(column.id)
                         }
                     }
-                });
+                })
             }
 
             if (parsedUrl.pathname === '/serv/v1/column/articles') {
@@ -68,7 +78,7 @@ const child_process = require('child_process');
                     const id = article.id
                     // console.log(id)
                     articles.push(article)
-                });
+                })
                 columns_articles_dict[cid] = articles
             }
 
@@ -90,14 +100,16 @@ const child_process = require('child_process');
         // console.log(column.column_title)
         const url = 'https://time.geekbang.org/column/intro/' + column.id
         await page.goto(url)
-        await page.waitForSelector('#app > div > div.column-main > div.course-tab-view > div:nth-child(1) > div > div.table-item-text > div')
+        await page.waitForSelector(
+            '#app > div > div.column-main > div.course-tab-view > div:nth-child(1) > div > div.table-item-text > div'
+        )
         // await page.screenshot({ path: 'geekbang-column.png' });
         // break
     }
 
     for (let i = 0; i < columns.length; i++) {
-        column_title = columns_dict[columns[i]].column_title;
-        column_title = column_title.replace(/[/\\\?%*:\|"<>\.& ]/g, '');
+        column_title = columns_dict[columns[i]].column_title
+        column_title = column_title.replace(/[/\\\?%*:\|"<>\.& ]/g, '')
         console.log(column_title)
         articles = columns_articles_dict[columns[i]]
 
@@ -116,10 +128,17 @@ const child_process = require('child_process');
             console.log(url)
             // await page.goto(url);
             // await page.goto(url, { "waitUntil": "networkidle2" });
-            await page.goto(url, { "waitUntil": "networkidle0" });
-            await page.waitForSelector('#app > div > div > div.article-content.typo.common-content > p')
-            title = await page.$eval('#app > div > div > h1', title => title.innerText)
-            title = title.replace(/[/\\\?%*:\|"<>\.& ]/g, '-');
+            await page.goto(url, {
+                waitUntil: 'networkidle0'
+            })
+            await page.waitForSelector(
+                '#app > div > div > div.article-content.typo.common-content > p'
+            )
+            title = await page.$eval(
+                '#app > div > div > h1',
+                title => title.innerText
+            )
+            title = title.replace(/[/\\\?%*:\|"<>\.& ]/g, '-')
             title = i.toString() + '-' + title
             console.log(title)
             pdf_file_path = path.join(column_path, title + '.pdf')
@@ -128,24 +147,29 @@ const child_process = require('child_process');
             await page.evaluate(() => {
                 console.log(document.getElementsByClassName('article'))
                 // document.getElementsByClassName('article')[0].children[1].remove()
-            });
+            })
 
-            await page.pdf({ path: pdf_file_path });
+            await page.pdf({
+                path: pdf_file_path
+            })
 
             try {
-                const audio_url = await page.$eval('#app > div > div > div.article-content.typo.common-content > div.mini-audio-player > audio', audio => audio.src)
+                const audio_url = await page.$eval(
+                    '#app > div > div > div.article-content.typo.common-content > div.mini-audio-player > audio',
+                    audio => audio.src
+                )
                 // console.log(audio_url)
                 audio_file_path = path.join(column_path, title + '.mp3')
-                const cmd = 'C:\\gohls\\gohls.exe -l=true ' + audio_url + ' ' + audio_file_path
+                const cmd =
+                    'C:\\gohls\\gohls.exe -l=true ' + audio_url + ' ' + audio_file_path
                 console.log(cmd)
                 child_process.execSync(cmd)
             } catch (error) {
                 console.log('no audio')
             }
-
         }
         // break
     }
 
-    await browser.close();
-})();
+    await browser.close()
+})()
