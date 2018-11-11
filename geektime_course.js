@@ -1,8 +1,8 @@
-const puppeteer = require('puppeteer')
-const URL = require('url').URL
-const fs = require('fs')
-const path = require('path')
-const child_process = require('child_process')
+const puppeteer = require('puppeteer');
+const URL = require('url').URL;
+const fs = require('fs');
+const path = require('path');
+const child_process = require('child_process');
 
 
 (async () => {
@@ -24,7 +24,7 @@ const child_process = require('child_process')
         width: 1920
     })
     main_page = await page.goto(
-        'https://account.geekbang.org/signin?redirect=https%3A%2F%2Ftime.geekbang.org%2Fpaid-content'
+        'https://account.geekbang.org/signin?redirect=https%3A%2F%2Ftime.geekbang.org%2f%3fcategory%3d3'
     )
     const warning_dialog_confirm_button = await page.$(
         'body > div.confirm-box-wrapper > div.confirm-box > div.foot > a'
@@ -53,9 +53,9 @@ const child_process = require('child_process')
         if (res.resourceType() === 'xhr') {
             // console.log(res.url())
             const parsedUrl = new URL(res.url())
-            if (parsedUrl.pathname === '/serv/v1/column/all') {
+            if (parsedUrl.pathname === '/serv/v1/column/newAll') {
                 const resp = await res.response().json()
-                resp.data['3'].list.forEach(column => {
+                resp.data.list.forEach(column => {
                     if (column.had_sub) {
                         if (COURSE_ID === 0 || COURSE_ID === column.id) {
                             columns_dict[column.id] = column
@@ -69,13 +69,14 @@ const child_process = require('child_process')
                 const resp = await res.response().json()
                 const video_url = JSON.parse(resp.data.column_video_media).hd.url
                 columns_dict[resp.data.id]['column_video_url'] = video_url
+                columns_dict[resp.data.id]['column_title'] = resp.data.column_title
             }
         }
     })
 
     await page.waitForNavigation()
     await page.waitForSelector(
-        '#app > div > div.content-wrap > div:nth-child(4) > div:nth-child(1)'
+        '#app > div > div.content > ul > li:nth-child(1)'
     )
 
     // console.log(columns)
