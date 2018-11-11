@@ -1,8 +1,8 @@
-const puppeteer = require('puppeteer')
-const URL = require('url').URL
-const fs = require('fs')
-const path = require('path')
-const child_process = require('child_process')
+const puppeteer = require('puppeteer');
+const URL = require('url').URL;
+const fs = require('fs');
+const path = require('path');
+const child_process = require('child_process');
 
 
 (async () => {
@@ -25,7 +25,7 @@ const child_process = require('child_process')
         width: 1920
     })
     main_page = await page.goto(
-        'https://account.geekbang.org/signin?redirect=https%3A%2F%2Ftime.geekbang.org%2Fcolumns'
+        'https://account.geekbang.org/signin?redirect=https%3A%2F%2Ftime.geekbang.org%2f%3fcategory%3d1'
     )
     const warning_dialog_confirm_button = await page.$(
         'body > div.confirm-box-wrapper > div.confirm-box > div.foot > a'
@@ -56,7 +56,7 @@ const child_process = require('child_process')
         if (res.resourceType() === 'xhr') {
             // console.log(res.url())
             const parsedUrl = new URL(res.url())
-            if (parsedUrl.pathname === '/serv/v1/columns') {
+            if (parsedUrl.pathname === '/serv/v1/column/newAll') {
                 const resp = await res.response().json()
                 resp.data.list.forEach(column => {
                     if (column.had_sub) {
@@ -67,6 +67,11 @@ const child_process = require('child_process')
                         }
                     }
                 })
+            }
+
+            if (parsedUrl.pathname === '/serv/v1/column/intro') {
+                const resp = await res.response().json()
+                columns_dict[resp.data.id]['column_title'] = resp.data.column_title
             }
 
             if (parsedUrl.pathname === '/serv/v1/column/articles') {
@@ -91,7 +96,7 @@ const child_process = require('child_process')
     })
 
     await page.waitForNavigation()
-    await page.waitForSelector('#app > div > div.columns-list > div:nth-child(1)')
+    await page.waitForSelector('#app > div > div.content > ul > li:nth-child(1)')
     // await page.screenshot({ path: 'geekbang-columns.png' });
 
     // console.log(columns)
@@ -99,12 +104,37 @@ const child_process = require('child_process')
         column = columns_dict[columns[i]]
         // console.log(column.column_title)
         const url = 'https://time.geekbang.org/column/intro/' + column.id
-        await page.goto(url)
-        await page.waitForSelector(
-            '#app > div > div.column-main > div.course-tab-view > div:nth-child(1) > div > div.table-item-text > div'
-        )
+        await page.goto(url, {
+            waitUntil: 'networkidle0'
+        })
+        // await page.waitForSelector(
+        //     '#app > div > div.column-main > div.course-tab-view > div:nth-child(1) > div > div.table-item-text > div'
+        // )
         // await page.screenshot({ path: 'geekbang-column.png' });
         // break
+
+        data_path = 'data'
+        if (!fs.existsSync(data_path)) {
+            fs.mkdirSync(data_path)
+        }
+
+        column_title = column.column_title
+        column_path = path.join(data_path, column_title)
+        if (!fs.existsSync(column_path)) {
+            fs.mkdirSync(column_path)
+        }
+
+        pdf_file_path = path.join(column_path, '课程介绍.pdf')
+
+        // remove article comments button
+        await page.evaluate(() => {
+            bottom = document.getElementsByClassName('bottom')[0]
+            bottom.parentNode.removeChild(bottom)
+        })
+
+        await page.pdf({
+            path: pdf_file_path
+        })
     }
 
     for (let i = 0; i < columns.length; i++) {
@@ -114,62 +144,62 @@ const child_process = require('child_process')
         articles = columns_articles_dict[columns[i]]
 
         data_path = 'data'
-        if (!fs.existsSync(data_path)) {
-            fs.mkdirSync(data_path)
-        }
-
         column_path = path.join(data_path, column_title)
-        if (!fs.existsSync(column_path)) {
-            fs.mkdirSync(column_path)
-        }
 
         for (let i = 0; i < articles.length; i++) {
             const url = 'https://time.geekbang.org/column/article/' + articles[i].id
             console.log(url)
-            // await page.goto(url);
-            // await page.goto(url, { "waitUntil": "networkidle2" });
-            await page.goto(url, {
-                waitUntil: 'networkidle0'
-            })
-            await page.waitForSelector(
-                '#app > div > div > div.article-content.typo.common-content > p'
-            )
-            title = await page.$eval(
-                '#app > div > div > h1',
-                title => title.innerText
-            )
-            title = title.replace(/[/\\\?%*:\|"<>\.& ]/g, '-')
-            title = i.toString() + '-' + title
-            console.log(title)
-            pdf_file_path = path.join(column_path, title + '.pdf')
+            max_retry = 3
+            for (let n = 0; n < max_retry; n++) {
+                try {
+                    // await page.goto(url);
+                    // await page.goto(url, { "waitUntil": "networkidle2" });
+                    await page.goto(url, {
+                        waitUntil: 'networkidle0'
+                    })
+                    // await page.waitForSelector(
+                    //     '#app > div > div > div.article-content.typo.common-content > p'
+                    // )
+                    title = await page.$eval(
+                        '#app > div > div > h1',
+                        title => title.innerText
+                    )
+                    title = title.replace(/[/\\\?%*:\|"<>\.& ]/g, '-')
+                    title = i.toString() + '-' + title
+                    console.log(title)
+                    pdf_file_path = path.join(column_path, title + '.pdf')
 
-            // remove article comments button
-            await page.evaluate(() => {
-                console.log(document.getElementsByClassName('article'))
-                // document.getElementsByClassName('article')[0].children[1].remove()
-            })
+                    // remove article comments button
+                    await page.evaluate(() => {
+                        console.log(document.getElementsByClassName('article'))
+                        // document.getElementsByClassName('article')[0].children[1].remove()
+                    })
 
-            await page.pdf({
-                path: pdf_file_path
-            })
+                    await page.pdf({
+                        path: pdf_file_path
+                    })
 
-            try {
-                const audio_url = await page.$eval(
-                    '#app > div > div > div.article-content.typo.common-content > div.mini-audio-player > audio',
-                    audio => audio.src
-                )
-                // console.log(audio_url)
-                audio_file_path = path.join(column_path, title + '.mp3')
-                const cmd =
-                    'C:\\gohls\\gohls.exe -l=true ' + audio_url + ' ' + audio_file_path
-                console.log(cmd)
-                child_process.execSync(cmd)
-            } catch (error) {
-                console.log('no audio')
+                    try {
+                        const audio_url = await page.$eval(
+                            '#app > div > div > div.article-content.typo.common-content > div.mini-audio-player > audio',
+                            audio => audio.src
+                        )
+                        // console.log(audio_url)
+                        audio_file_path = path.join(column_path, title + '.mp3')
+                        const cmd =
+                            'C:\\gohls\\gohls.exe -l=true ' + audio_url + ' ' + audio_file_path
+                        console.log(cmd)
+                        child_process.execSync(cmd)
+                    } catch (error) {
+                        console.log('no audio')
+                    }
+                    break
+                } catch (error) {
+                    continue
+                }
             }
         }
         // break
     }
-
     await browser.close()
 })()
