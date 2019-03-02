@@ -1,9 +1,12 @@
-const puppeteer = require('puppeteer');
+const puppeteer = require("puppeteer-extra");
 const URL = require('url').URL;
 const fs = require('fs');
 const path = require('path');
 const child_process = require('child_process');
 
+
+const pluginStealth = require("puppeteer-extra-plugin-stealth");
+puppeteer.use(pluginStealth());
 
 (async () => {
     LOGIN_NAME = process.env.LOGIN_NAME
@@ -33,19 +36,23 @@ const child_process = require('child_process');
     if (warning_dialog_confirm_button != null) {
         warning_dialog_confirm_button.click()
     }
-    await page.type(
-        'body > div > div.container > div.card > div.nw-phone-container > div.nw-phone-wrap > input',
-        LOGIN_NAME
-    )
-    await page.type(
-        'body > div > div.container > div.card > div.input-wrap > input',
-        PASSWORD
-    )
-    const login_button_selector = 'body > div > div.container > div.card > button'
-    await page.waitForSelector(login_button_selector)
+
+    // await page.screenshot({ path: 'login-pre.png' })
+    const switch_password_login_button_selector = 'body > div.clearfix > div.container > div.card > div.forget > a'
+    await page.waitForSelector(switch_password_login_button_selector)
+    await page.click(switch_password_login_button_selector)
+
+    const login_name_selector = 'body > div.clearfix > div.container > div.card > div.nw-phone-container > div.nw-phone-wrap > input'
+    const password_selector = 'body > div.clearfix > div.container > div.card > div.input-wrap > input'
+    const login_button_selector = 'body > div.clearfix > div.container > div.card > button'
+    await page.waitForSelector(password_selector)
+    // await page.screenshot({ path: 'login-switch.png' })
+    await page.type(login_name_selector, LOGIN_NAME)
+    await page.type(password_selector, PASSWORD)
     await page.click(login_button_selector)
 
-    // page.screenshot({ path: 'login.png' })
+    // await page.screenshot({ path: 'login.png' })
+    // process.exit(0)
 
     const columns_dict = {}
     const columns = []
@@ -96,22 +103,17 @@ const child_process = require('child_process');
     })
 
     await page.waitForNavigation()
-    await page.waitForSelector('#app > div > div.content > ul > li:nth-child(1)')
+    await page.waitForSelector('#app > div.page-home > div.content > ul > li:nth-child(1)')
     // await page.screenshot({ path: 'geekbang-columns.png' });
 
     // console.log(columns)
     for (let i = 0; i < columns.length; i++) {
         column = columns_dict[columns[i]]
-        // console.log(column.column_title)
+        // console.log(column)
         const url = 'https://time.geekbang.org/column/intro/' + column.id
         await page.goto(url, {
             waitUntil: 'networkidle0'
         })
-        // await page.waitForSelector(
-        //     '#app > div > div.column-main > div.course-tab-view > div:nth-child(1) > div > div.table-item-text > div'
-        // )
-        // await page.screenshot({ path: 'geekbang-column.png' });
-        // break
 
         data_path = 'data'
         if (!fs.existsSync(data_path)) {
@@ -124,13 +126,7 @@ const child_process = require('child_process');
             fs.mkdirSync(column_path)
         }
 
-        pdf_file_path = path.join(column_path, '课程介绍.pdf')
-
-        // remove article comments button
-        await page.evaluate(() => {
-            bottom = document.getElementsByClassName('bottom')[0]
-            bottom.parentNode.removeChild(bottom)
-        })
+        pdf_file_path = path.join(column_path, '0-00---课程介绍.pdf')
 
         await page.pdf({
             path: pdf_file_path
@@ -157,34 +153,29 @@ const child_process = require('child_process');
                     await page.goto(url, {
                         waitUntil: 'networkidle0'
                     })
-                    // await page.waitForSelector(
-                    //     '#app > div > div > div.article-content.typo.common-content > p'
-                    // )
-                    title = await page.$eval(
-                        '#app > div > div > h1',
-                        title => title.innerText
-                    )
+
+                    title_selector = '#app > div.d4s24Cak_0 > div._2iHgUKTE_0 > div > div.yXXuK9Bz_0 > h1'
+                    title = await page.$eval(title_selector, title => title.innerText)
                     title = title.replace(/[/\\\?%*:\|"<>\.& ]/g, '-')
                     title = i.toString() + '-' + title
                     console.log(title)
                     pdf_file_path = path.join(column_path, title + '.pdf')
 
-                    // remove article comments button
-                    await page.evaluate(() => {
-                        console.log(document.getElementsByClassName('article'))
-                        // document.getElementsByClassName('article')[0].children[1].remove()
-                    })
+                    const collapse_comment_selector = await page.$x('//*[@id="app"]/div[1]/div[2]/div/div[2]/div[4]/ul/li/div/div[3]/span');
+                    for (let i = 0; i < collapse_comment_selector.length; i++ ) {
+                        // console.log(comment);
+                        const comment = collapse_comment_selector[i];
+                        await comment.click();
+                    }
 
                     await page.pdf({
                         path: pdf_file_path
-                    })
+                    });
 
                     try {
-                        const audio_url = await page.$eval(
-                            '#app > div > div > div.article-content.typo.common-content > div.mini-audio-player > audio',
-                            audio => audio.src
-                        )
-                        // console.log(audio_url)
+                        audio_selector = '#app > div.d4s24Cak_0 > div._2iHgUKTE_0 > div > div.yXXuK9Bz_0 > div._1dC78n85_0._2_jLRfDz_0 > div._1Bg5E78Y_0.KPNfF2Ub_0 > audio'
+                        const audio_url = await page.$eval(audio_selector, audio => audio.src)
+                        console.log(audio_url)
                         audio_file_path = path.join(column_path, title + '.mp3')
                         const cmd =
                             'C:\\gohls\\gohls.exe -l=true ' + audio_url + ' ' + audio_file_path
@@ -195,8 +186,8 @@ const child_process = require('child_process');
                     }
                     break
                 } catch (error) {
-                    continue
-                }
+                    console.log(error)
+                } 
             }
         }
         // break

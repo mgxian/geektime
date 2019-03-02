@@ -1,9 +1,12 @@
-const puppeteer = require('puppeteer');
+const puppeteer = require('puppeteer-extra');
 const URL = require('url').URL;
 const fs = require('fs');
 const path = require('path');
 const child_process = require('child_process');
 
+
+const pluginStealth = require("puppeteer-extra-plugin-stealth");
+puppeteer.use(pluginStealth());
 
 (async () => {
     LOGIN_NAME = process.env.LOGIN_NAME
@@ -32,17 +35,23 @@ const child_process = require('child_process');
     if (warning_dialog_confirm_button != null) {
         warning_dialog_confirm_button.click()
     }
-    await page.type(
-        'body > div > div.container > div.card > div.nw-phone-container > div.nw-phone-wrap > input',
-        LOGIN_NAME
-    )
-    await page.type(
-        'body > div > div.container > div.card > div.input-wrap > input',
-        PASSWORD
-    )
-    const login_button_selector = 'body > div > div.container > div.card > button'
-    await page.waitForSelector(login_button_selector)
+
+    // await page.screenshot({ path: 'login-pre.png' })
+    const switch_password_login_button_selector = 'body > div.clearfix > div.container > div.card > div.forget > a'
+    await page.waitForSelector(switch_password_login_button_selector)
+    await page.click(switch_password_login_button_selector)
+
+    const login_name_selector = 'body > div.clearfix > div.container > div.card > div.nw-phone-container > div.nw-phone-wrap > input'
+    const password_selector = 'body > div.clearfix > div.container > div.card > div.input-wrap > input'
+    const login_button_selector = 'body > div.clearfix > div.container > div.card > button'
+    await page.waitForSelector(password_selector)
+    // await page.screenshot({ path: 'login-switch.png' })
+    await page.type(login_name_selector, LOGIN_NAME)
+    await page.type(password_selector, PASSWORD)
     await page.click(login_button_selector)
+
+    // await page.screenshot({ path: 'login.png' })
+    // process.exit(0)
 
     const columns_dict = {}
     const columns = []
@@ -75,9 +84,7 @@ const child_process = require('child_process');
     })
 
     await page.waitForNavigation()
-    await page.waitForSelector(
-        '#app > div > div.content > ul > li:nth-child(1)'
-    )
+    await page.waitForSelector('#app > div.page-home > div.content > ul > li:nth-child(1)')
 
     // console.log(columns)
     for (let i = 0; i < columns.length; i++) {
