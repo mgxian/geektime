@@ -8,6 +8,9 @@ const child_process = require('child_process');
 const pluginStealth = require("puppeteer-extra-plugin-stealth");
 puppeteer.use(pluginStealth());
 
+const CHROME_PATH = 'C:\\chrome-win32\\chrome.exe';
+const GOHLS_PATH = 'C:\\gohls\\gohls.exe -l=true ';
+
 (async () => {
     LOGIN_NAME = process.env.LOGIN_NAME
     PASSWORD = process.env.PASSWORD
@@ -19,7 +22,7 @@ puppeteer.use(pluginStealth());
     // process.exit(0)
     options = {
         // headless: false,
-        executablePath: 'C:\\chrome-win32\\chrome.exe'
+        executablePath: CHROME_PATH
     }
     const browser = await puppeteer.launch(options)
     const page = await browser.newPage()
@@ -31,7 +34,7 @@ puppeteer.use(pluginStealth());
         'https://account.geekbang.org/signin?redirect=https%3A%2F%2Ftime.geekbang.org%2f%3fcategory%3d1'
     )
     const warning_dialog_confirm_button = await page.$(
-        'body > div.confirm-box-wrapper > div.confirm-box > div.foot > a'
+        'body > div:nth-child(12) > div.confirm-box > div.foot > a'
     )
     if (warning_dialog_confirm_button != null) {
         warning_dialog_confirm_button.click()
@@ -145,16 +148,29 @@ puppeteer.use(pluginStealth());
         for (let i = 0; i < articles.length; i++) {
             const url = 'https://time.geekbang.org/column/article/' + articles[i].id
             console.log(url)
-            max_retry = 3
+            const max_retry = 3
+            const FIRST_TRY = 0
+            const SECOND_TRY = 1
+            const Third_TRY = 2
             for (let n = 0; n < max_retry; n++) {
                 try {
-                    // await page.goto(url);
-                    // await page.goto(url, { "waitUntil": "networkidle2" });
-                    await page.goto(url, {
-                        waitUntil: 'networkidle0'
-                    })
+                    
+                    if (n == FIRST_TRY) {
+                        await page.goto(url, { timeout: 10000, waitUntil: [ 'load', 'networkidle0' ] });
+                    }
+                    
+                    if (n == SECOND_TRY) {
+                        await page.goto(url, { timeout: 10000, waitUntil: [ 'load', 'networkidle2' ] });
+                    }
+
+                    if (n == Third_TRY) {
+                        await page.goto(url);
+                        await page.screenshot();
+                    }
 
                     title_selector = '#app > div.d4s24Cak_0 > div._2iHgUKTE_0 > div > div.yXXuK9Bz_0 > h1'
+                    await page.waitForSelector(title_selector)
+
                     title = await page.$eval(title_selector, title => title.innerText)
                     title = title.replace(/[/\\\?%*:\|"<>\.& ]/g, '-')
                     title = i.toString() + '-' + title
@@ -163,7 +179,6 @@ puppeteer.use(pluginStealth());
 
                     const collapse_comment_selector = await page.$x('//*[@id="app"]/div[1]/div[2]/div/div[2]/div[4]/ul/li/div/div[3]/span');
                     for (let i = 0; i < collapse_comment_selector.length; i++ ) {
-                        // console.log(comment);
                         const comment = collapse_comment_selector[i];
                         await comment.click();
                     }
@@ -175,22 +190,23 @@ puppeteer.use(pluginStealth());
                     try {
                         audio_selector = '#app > div.d4s24Cak_0 > div._2iHgUKTE_0 > div > div.yXXuK9Bz_0 > div._1dC78n85_0._2_jLRfDz_0 > div._1Bg5E78Y_0.KPNfF2Ub_0 > audio'
                         const audio_url = await page.$eval(audio_selector, audio => audio.src)
-                        console.log(audio_url)
+                        // console.log(audio_url)
                         audio_file_path = path.join(column_path, title + '.mp3')
-                        const cmd =
-                            'C:\\gohls\\gohls.exe -l=true ' + audio_url + ' ' + audio_file_path
-                        console.log(cmd)
-                        child_process.execSync(cmd)
+                        const cmd = GOHLS_PATH + audio_url + ' ' + audio_file_path
+                        console.log(cmd);
+                        child_process.execSync(cmd, { stdio: 'ignore' });
                     } catch (error) {
                         console.log('no audio')
                     }
                     break
                 } catch (error) {
-                    console.log(error)
+                    if (n >= Third_TRY) {
+                        console.log(error)
+                        console.log(`get error ----> ${url}`)
+                    }
                 } 
             }
         }
-        // break
     }
     await browser.close()
 })()
