@@ -60,6 +60,7 @@ const GOHLS_PATH = 'C:\\gohls\\gohls.exe -l=true ';
     const columns_dict = {}
     const columns = []
     const columns_articles_dict = {}
+    const columns_articles_content = {}
 
     // await page.setRequestInterception(true);
     page.on('requestfinished', async res => {
@@ -99,8 +100,10 @@ const GOHLS_PATH = 'C:\\gohls\\gohls.exe -l=true ';
 
             if (parsedUrl.pathname === '/serv/v1/article') {
                 const resp = await res.response().json()
-                cid = resp.data.cid
-                id = resp.data.id
+                const article_id = resp.data.id
+                const article_content = resp.data.article_content
+                columns_articles_content[article_id] = article_content
+                // console.log(article_content)
             }
         }
     })
@@ -198,6 +201,15 @@ const GOHLS_PATH = 'C:\\gohls\\gohls.exe -l=true ';
                     } catch (error) {
                         console.log('no audio')
                     }
+
+                    try {
+                        const article_content = columns_articles_content[articles[i].id]
+                        // console.log(article_content)
+                    } catch (error) {
+                        console.log(error)
+                        console.log('no video')
+                    }
+
                     break
                 } catch (error) {
                     if (n >= Third_TRY) {
