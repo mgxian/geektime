@@ -1,0 +1,25 @@
+{
+  "name": "geektime",
+  "version": "1.0.0",
+  "description": "geektime",
+  "main": "geektime_column.js",
+  "dependencies": {
+    "puppeteer": "^1.7.0",
+    "puppeteer-extra": "^2.1.3",
+    "puppeteer-extra-plugin-stealth": "^2.2.2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mgxian/geektime.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mgxian/geektime/issues"
+  },
+  "homepage": "https://github.com/mgxian/geektime#readme"
+}
