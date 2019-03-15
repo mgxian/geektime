@@ -20,16 +20,17 @@ const GOHLS_PATH = 'C:\\gohls\\gohls.exe -l=true ';
     }
     console.log(LOGIN_NAME, PASSWORD, COLUMN_ID)
     // process.exit(0)
+    const width = 859
+    const height = 1080
     options = {
-        // headless: false,
-        executablePath: CHROME_PATH
+        headless: false,
+        executablePath: CHROME_PATH,
+        // args: [
+        //     `--window-size=${ width },${ height }`
+        // ],
     }
     const browser = await puppeteer.launch(options)
     const page = await browser.newPage()
-    page.setViewport({
-        height: 1080,
-        width: 1920
-    })
     main_page = await page.goto(
         'https://account.geekbang.org/signin?redirect=https%3A%2F%2Ftime.geekbang.org%2f%3fcategory%3d1'
     )
@@ -134,11 +135,15 @@ const GOHLS_PATH = 'C:\\gohls\\gohls.exe -l=true ';
 
         pdf_file_path = path.join(column_path, '0-00---课程介绍.pdf')
 
-        await page.pdf({
-            path: pdf_file_path
-        })
+        // await page.pdf({
+        //     path: pdf_file_path
+        // })
     }
 
+    page.setViewport({
+        height: height,
+        width: width
+    })
     for (let i = 0; i < columns.length; i++) {
         column_title = columns_dict[columns[i]].column_title
         column_title = column_title.replace(/[/\\\?%*:\|"<>\.& ]/g, '')
@@ -186,9 +191,9 @@ const GOHLS_PATH = 'C:\\gohls\\gohls.exe -l=true ';
                         await comment.click();
                     }
 
-                    await page.pdf({
-                        path: pdf_file_path
-                    });
+                    // await page.pdf({
+                    //     path: pdf_file_path
+                    // });
 
                     try {
                         audio_selector = '#app > div.d4s24Cak_0 > div._2iHgUKTE_0 > div > div.yXXuK9Bz_0 > div._1dC78n85_0._2_jLRfDz_0 > div._1Bg5E78Y_0.KPNfF2Ub_0 > audio'
