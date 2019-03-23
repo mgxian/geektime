@@ -23,7 +23,7 @@ const GOHLS_PATH = 'C:\\gohls\\gohls.exe -l=true ';
     const width = 859
     const height = 1080
     options = {
-        headless: false,
+        // headless: false,
         executablePath: CHROME_PATH,
         // args: [
         //     `--window-size=${ width },${ height }`
@@ -113,6 +113,11 @@ const GOHLS_PATH = 'C:\\gohls\\gohls.exe -l=true ';
     await page.waitForSelector('#app > div.page-home > div.content > ul > li:nth-child(1)')
     // await page.screenshot({ path: 'geekbang-columns.png' });
 
+    page.setViewport({
+        height: height,
+        width: width
+    });
+
     // console.log(columns)
     for (let i = 0; i < columns.length; i++) {
         column = columns_dict[columns[i]]
@@ -134,16 +139,17 @@ const GOHLS_PATH = 'C:\\gohls\\gohls.exe -l=true ';
         }
 
         pdf_file_path = path.join(column_path, '0-00---课程介绍.pdf')
+        
+        await page.evaluate(() => {
+            const bottom = document.getElementsByClassName('bottom')[0];
+            bottom.parentNode.removeChild(bottom);
+        });
 
-        // await page.pdf({
-        //     path: pdf_file_path
-        // })
+        await page.pdf({
+            path: pdf_file_path
+        })
     }
 
-    page.setViewport({
-        height: height,
-        width: width
-    })
     for (let i = 0; i < columns.length; i++) {
         column_title = columns_dict[columns[i]].column_title
         column_title = column_title.replace(/[/\\\?%*:\|"<>\.& ]/g, '')
@@ -176,7 +182,7 @@ const GOHLS_PATH = 'C:\\gohls\\gohls.exe -l=true ';
                         await page.screenshot();
                     }
 
-                    title_selector = '#app > div.d4s24Cak_0 > div._2iHgUKTE_0 > div > div.yXXuK9Bz_0 > h1'
+                    title_selector = '#app > div._3ADRghFH_0 > div._20-cXID6_0 > div > div._50pDbNcP_0 > h1'
                     await page.waitForSelector(title_selector)
 
                     title = await page.$eval(title_selector, title => title.innerText)
@@ -185,18 +191,18 @@ const GOHLS_PATH = 'C:\\gohls\\gohls.exe -l=true ';
                     console.log(title)
                     pdf_file_path = path.join(column_path, title + '.pdf')
 
-                    const collapse_comment_selector = await page.$x('//*[@id="app"]/div[1]/div[2]/div/div[2]/div[4]/ul/li/div/div[3]/span');
+                    const collapse_comment_selector = await page.$x('//*[@id="app"]/div[1]/div[2]/div/div[2]/div[4]/ul/li[3]/div/div[3]/span');
                     for (let i = 0; i < collapse_comment_selector.length; i++ ) {
                         const comment = collapse_comment_selector[i];
                         await comment.click();
                     }
 
-                    // await page.pdf({
-                    //     path: pdf_file_path
-                    // });
+                    await page.pdf({
+                        path: pdf_file_path
+                    });
 
                     try {
-                        audio_selector = '#app > div.d4s24Cak_0 > div._2iHgUKTE_0 > div > div.yXXuK9Bz_0 > div._1dC78n85_0._2_jLRfDz_0 > div._1Bg5E78Y_0.KPNfF2Ub_0 > audio'
+                        audio_selector = '#app > div._3ADRghFH_0 > div._20-cXID6_0 > div > div._50pDbNcP_0 > div._3Jbcj4Iu_0._2QmGFWqF_0 > div._1Bg5E78Y_0._25ls2Q2l_0 > audio'
                         const audio_url = await page.$eval(audio_selector, audio => audio.src)
                         // console.log(audio_url)
                         audio_file_path = path.join(column_path, title + '.mp3')
