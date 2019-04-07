@@ -20,18 +20,22 @@ const VIDEO_ERROR_SIZE = 1024*1024;
         COURSE_ID = 0
     }
     console.log(LOGIN_NAME, PASSWORD, COURSE_ID)
+    const width = 859
+    const height = 1080
     options = {
         // headless: false,
         executablePath: CHROME_PATH
     }
     const browser = await puppeteer.launch(options)
     const page = await browser.newPage()
+
     page.setViewport({
-        height: 1080,
-        width: 1920
-    })
+        height: height,
+        width: width
+    });
+
     main_page = await page.goto(
-        'https://account.geekbang.org/signin?redirect=https%3A%2F%2Ftime.geekbang.org%2f%3fcategory%3d3'
+        'https://account.geekbang.org/signin?redirect=https%3A%2F%2Ftime.geekbang.org%2Fcolumn%2Fintro%2F' + COURSE_ID
     )
     const warning_dialog_confirm_button = await page.$(
         'body > div:nth-child(12) > div.confirm-box > div.foot > a'
@@ -57,99 +61,97 @@ const VIDEO_ERROR_SIZE = 1024*1024;
     // await page.screenshot({ path: 'login.png' })
     // process.exit(0)
 
-    const columns_dict = {}
-    const columns = []
-    const columns_articles_dict = {}
+    const course = {}
+    const course_articles = []
 
     // await page.setRequestInterception(true);
     page.on('requestfinished', async res => {
         if (res.resourceType() === 'xhr') {
             // console.log(res.url())
             const parsedUrl = new URL(res.url())
-            if (parsedUrl.pathname === '/serv/v1/column/newAll') {
-                const resp = await res.response().json()
-                resp.data.list.forEach(column => {
-                    if (column.had_sub) {
-                        if (COURSE_ID === 0 || COURSE_ID === column.id) {
-                            columns_dict[column.id] = column
-                            columns.push(column.id)
-                        }
-                    }
-                })
-            }
-
             if (parsedUrl.pathname === '/serv/v1/column/intro') {
                 const resp = await res.response().json()
                 const video_url = JSON.parse(resp.data.column_video_media).hd.url
-                columns_dict[resp.data.id]['column_video_url'] = video_url
-                columns_dict[resp.data.id]['column_title'] = resp.data.column_title
+                course.column_title = resp.data.column_title
+                course.column_video_url = video_url
+            }
+
+            if (parsedUrl.pathname === '/serv/v1/column/articles') {
+                const resp = await res.response().json()
+                resp.data.list.forEach(article => {
+                    course_articles.push(article)
+                })
             }
         }
-    })
+    });
 
-    await page.waitForNavigation()
-    await page.waitForSelector('#app > div.page-home > div.content > ul > li:nth-child(1)')
+    await page.waitForNavigation({
+        waitUntil: 'networkidle0'
+    });
 
+    // console.log(column);
 
-    for (let i = 0; i < columns.length; i++) {
-        column = columns_dict[columns[i]]
-        const url = 'https://time.geekbang.org/course/intro/' + column.id
-        await page.goto(url)
-        const resp = await page.waitForResponse(
-            'https://time.geekbang.org/serv/v1/column/articles'
-        )
-
-        const post_data = JSON.parse(resp.request().postData())
-        const data = await resp.json()
-        const cid = post_data.cid
-        columns_articles_dict[cid] = data.data.list
+    function format_win_path(path){
+        path = path.replace(/[/\\\?%*:\|"<>\.& ]/g, '-')
+        path = path.replace(/[、，？]/g,'-')
+        path = path.replace(/[-+]$/g,'')
+        return path
+    };
+    
+    data_path = 'data'
+    if (!fs.existsSync(data_path)) {
+        fs.mkdirSync(data_path)
     }
 
+    column_title = course.column_title
+    column_path = path.join(data_path, column_title)
+    if (!fs.existsSync(column_path)) {
+        fs.mkdirSync(column_path)
+    }
 
-    for (let i = 0; i < columns.length; i++) {
-        column_title = columns_dict[columns[i]].column_title
-        column_title = column_title.replace(/[/\\\?%*:\|"<>\.& ]/g, '')
-        title = i.toString() + '-' + column_title
-        console.log(column_title)
-        articles = columns_articles_dict[columns[i]]
+    pdf_file_path = path.join(column_path, '0-00---课程介绍.pdf')
 
-        data_path = 'data'
-        if (!fs.existsSync(data_path)) {
-            fs.mkdirSync(data_path)
+    await page.evaluate(() => {
+        const bottom = document.getElementsByClassName('bottom')[0];
+        bottom.parentNode.removeChild(bottom);
+    });
+
+    await page.pdf({
+        path: pdf_file_path
+    });
+
+    video_url = course.column_video_url
+    video_file_path = path.join(column_path, '00---课程介绍' + '.mp4')
+    const cmd = GOHLS_PATH + video_url + ' ' + video_file_path
+    console.log(cmd)
+    while (true) {
+        try {
+            child_process.execSync(cmd, { stdio: 'ignore' });
+            break
+        } catch (error) {
+            console.log(error.error);
         }
+    }
 
-        column_path = path.join(data_path, column_title)
-        if (!fs.existsSync(column_path)) {
-            fs.mkdirSync(column_path)
-        }
-
-        video_url = columns_dict[columns[i]].column_video_url
-        video_file_path = path.join(column_path, '00---课程介绍' + '.mp4')
+    articles = course_articles
+    for (let i = 0; i < articles.length; i++) {
+        title = format_win_path(articles[i].article_title)
+        video_url = articles[i].video_media_map.hd.url
+        video_size = articles[i].video_media_map.hd.size
+        video_file_path = path.join(column_path, title + '.mp4')
         const cmd = GOHLS_PATH + video_url + ' ' + video_file_path
+        console.log(title)
         console.log(cmd)
-        child_process.execSync(cmd, { stdio: 'ignore' });
-
-        for (let i = 0; i < articles.length; i++) {
-            title = articles[i].article_title
-            title = title.replace(/[/\\\?%*:\|"<>\.& ]/g, '-')
-            console.log(title)
-            const max_retry = 3
-            for (let n = 0; n < max_retry; n++) {
-                try {
-                    video_url = articles[i].video_media_map.hd.url
-                    video_size = articles[i].video_media_map.hd.size
-                    video_file_path = path.join(column_path, title + '.mp4')
-                    const cmd = GOHLS_PATH + video_url + ' ' + video_file_path
-                    console.log(cmd)
-                    child_process.execSync(cmd, { stdio: 'ignore' })
-                    const file_size = fs.statSync(video_file_path).size
-                    const delta = Math.abs(file_size - video_size)
-                    if (delta < VIDEO_ERROR_SIZE) {
-                        break
-                    }
-                } catch (error) {
-                    console.log('no video');
+        while (true) {
+            try {
+                child_process.execSync(cmd, { stdio: 'ignore' })
+                const file_size = fs.statSync(video_file_path).size
+                const delta = Math.abs(file_size - video_size)
+                if (delta < VIDEO_ERROR_SIZE) {
+                    break
                 }
+            } catch (error) {
+                console.log(error.error);
             }
         }
     }
