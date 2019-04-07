@@ -109,7 +109,7 @@ const VIDEO_ERROR_SIZE = 1024*1024;
         fs.mkdirSync(column_path)
     }
 
-    pdf_file_path = path.join(column_path, '0-00---课程介绍.pdf')
+    pdf_file_path = path.join(column_path, '00---课程介绍.pdf')
 
     await page.evaluate(() => {
         const bottom = document.getElementsByClassName('bottom')[0];
@@ -121,7 +121,7 @@ const VIDEO_ERROR_SIZE = 1024*1024;
     });
 
     video_url = course.column_video_url
-    video_file_path = path.join(column_path, '00---课程介绍' + '.mp4')
+    video_file_path = path.join(column_path, '00---课程介绍.mp4')
     const cmd = GOHLS_PATH + video_url + ' ' + video_file_path
     console.log(cmd)
     while (true) {
