@@ -3,6 +3,7 @@ const URL = require('url').URL;
 const fs = require('fs');
 const path = require('path');
 const child_process = require('child_process');
+const https = require('https');
 
 
 const pluginStealth = require("puppeteer-extra-plugin-stealth");
@@ -66,6 +67,7 @@ const GOHLS_PATH = 'C:\\gohls\\gohls.exe -l=true ';
 
     const column = {}
     const column_articles = []
+    const article_videos = {}
 
     // await page.setRequestInterception(true);
     page.on('requestfinished', async res => {
@@ -82,6 +84,23 @@ const GOHLS_PATH = 'C:\\gohls\\gohls.exe -l=true ';
                 resp.data.list.forEach(article => {
                     column_articles.push(article)
                 })
+            }
+
+            if (parsedUrl.pathname === '/serv/v1/article') {
+                const resp = await res.response().json()
+                const article_id = resp.data.id
+                const article_content = resp.data.article_content
+                const v_urls = await page.evaluate((article_content) => {
+                   const el = document.createElement( 'html' );
+                   el.innerHTML = article_content
+                   const videos = el.querySelectorAll('source[type="video/mp4"]')
+                   const v_urls = []
+                   videos.forEach(v => {
+                        v_urls.push(v.src)
+                   })
+                   return v_urls
+                }, article_content);
+                article_videos[article_id] = { "v_urls": v_urls, "title": resp.data.article_title };
             }
         }
     });
@@ -181,14 +200,34 @@ const GOHLS_PATH = 'C:\\gohls\\gohls.exe -l=true ';
                     console.log(error)
                     console.log('no audio')
                 }
+
+                const v_urls = article_videos[articles[i].id].v_urls
+                for ( let j = 0; j < v_urls.length; j++) {
+                    video_file_path = path.join(column_path, title + '-' + j.toString() + '.mp4')
+                    while (true) {
+                        try {
+                            const file = fs.createWriteStream(video_file_path);
+                            console.log(v_urls[j], video_file_path)
+                            await https.get(v_urls[j], function(response) {
+                                response.on('data', (d) => {
+                                    file.write(d);
+                                });
+                            });
+                            break
+                        } catch (error) {
+                            console.log(error);
+                        }
+                    }
+                }
                 break
             } catch (error) {
                 if (n >= Third_TRY) {
                     console.log(error)
                     console.log(`get error ----> ${url}`)
                 }
-            } 
+            }
         }
     }
+    // console.log(article_videos)
     await browser.close()
 })()
