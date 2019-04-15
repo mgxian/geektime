@@ -193,7 +193,7 @@ const GOHLS_PATH = 'C:\\gohls\\gohls.exe -l=true ';
                     console.log(title)
                     pdf_file_path = path.join(column_path, title + '.pdf')
 
-                    const collapse_comment_selector = await page.$x('//*[@id="app"]/div[1]/div[2]/div/div[2]/div[4]/ul/li/div/div[3]');
+                    const collapse_comment_selector = await page.$x('//span[text()="展开"]');
                     for (let i = 0; i < collapse_comment_selector.length; i++ ) {
                         const comment = collapse_comment_selector[i];
                         await comment.click();

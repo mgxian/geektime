@@ -150,7 +150,7 @@ const GOHLS_PATH = 'C:\\gohls\\gohls.exe -l=true ';
                     await page.screenshot();
                 }
 
-                title_selector = '#app > div._3ADRghFH_0 > div._20-cXID6_0 > div > div._50pDbNcP_0 > h1'
+                title_selector = 'h1'
                 await page.waitForSelector(title_selector)
 
                 title = await page.$eval(title_selector, title => title.innerText)
@@ -159,7 +159,7 @@ const GOHLS_PATH = 'C:\\gohls\\gohls.exe -l=true ';
                 console.log(title)
                 pdf_file_path = path.join(column_path, title + '.pdf')
 
-                const collapse_comment_selector = await page.$x('//*[@id="app"]/div[1]/div[2]/div/div[2]/div[4]/ul/li/div/div[3]');
+                const collapse_comment_selector = await page.$x('//span[text()="展开"]');
                 for (let i = 0; i < collapse_comment_selector.length; i++ ) {
                     const comment = collapse_comment_selector[i];
                     await comment.click();
@@ -170,7 +170,7 @@ const GOHLS_PATH = 'C:\\gohls\\gohls.exe -l=true ';
                 });
 
                 try {
-                    audio_selector = '#app > div._3ADRghFH_0 > div._20-cXID6_0 > div > div._50pDbNcP_0 > div._3Jbcj4Iu_0._2QmGFWqF_0 > div._1Bg5E78Y_0._25ls2Q2l_0 > audio'
+                    audio_selector = 'audio'
                     const audio_url = await page.$eval(audio_selector, audio => audio.src)
                     // console.log(audio_url)
                     audio_file_path = path.join(column_path, title + '.mp3')
