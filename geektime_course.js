@@ -113,7 +113,9 @@ const VIDEO_ERROR_SIZE = 1024*1024;
 
     await page.evaluate(() => {
         const bottom = document.getElementsByClassName('bottom')[0];
-        bottom.parentNode.removeChild(bottom);
+        if (bottom) {
+            bottom.parentNode.removeChild(bottom);
+        }
     });
 
     await page.pdf({

@@ -114,7 +114,9 @@ const GOHLS_PATH = 'C:\\gohls\\gohls.exe -l=true ';
     
     await page.evaluate(() => {
         const bottom = document.getElementsByClassName('bottom')[0];
-        bottom.parentNode.removeChild(bottom);
+        if (bottom) {
+            bottom.parentNode.removeChild(bottom);
+        }
     });
 
     await page.pdf({
