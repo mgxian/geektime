@@ -11,6 +11,7 @@ puppeteer.use(pluginStealth());
 const CHROME_PATH = 'C:\\chrome-win32\\chrome.exe';
 const GOHLS_PATH = 'C:\\gohls\\gohls.exe -l=true ';
 const VIDEO_ERROR_SIZE = 1024*1024;
+const MOBILE_USER_AGENT = 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Mobile Safari/537.36';
 
 (async () => {
     LOGIN_NAME = process.env.LOGIN_NAME
@@ -33,6 +34,8 @@ const VIDEO_ERROR_SIZE = 1024*1024;
         height: height,
         width: width
     });
+
+    await page.setUserAgent(MOBILE_USER_AGENT);
 
     main_page = await page.goto(
         'https://account.geekbang.org/signin?redirect=https%3A%2F%2Ftime.geekbang.org%2Fcolumn%2Fintro%2F' + COURSE_ID
