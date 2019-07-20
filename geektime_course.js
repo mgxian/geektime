@@ -95,7 +95,7 @@ const MOBILE_USER_AGENT = 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N
     // console.log(column);
 
     function format_win_path(path){
-        path = path.replace(/[/\\\?%*:\|"<>\.& ]/g, '-')
+        path = path.replace(/[/\\\?%*:\|"<>\.& \t]/g, '-')
         path = path.replace(/[、，？]/g,'-')
         path = path.replace(/[-+]$/g,'')
         return path
@@ -106,7 +106,7 @@ const MOBILE_USER_AGENT = 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N
         fs.mkdirSync(data_path)
     }
 
-    column_title = course.column_title
+    column_title = format_win_path(course.column_title)
     column_path = path.join(data_path, column_title)
     if (!fs.existsSync(column_path)) {
         fs.mkdirSync(column_path)
